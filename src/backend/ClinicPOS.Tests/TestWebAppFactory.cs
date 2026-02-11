@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace ClinicPOS.Tests;
@@ -18,6 +19,16 @@ public class TestWebAppFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        // Suppress noisy logs so test names are visible in output
+        builder.ConfigureLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.SetMinimumLevel(LogLevel.Warning);
+            logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.None);
+            logging.AddFilter("Microsoft.Hosting", LogLevel.None);
+            logging.AddFilter("ClinicPOS.API.Middleware", LogLevel.None);
+        });
 
         builder.ConfigureServices(services =>
         {

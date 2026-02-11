@@ -130,11 +130,55 @@ All endpoints (except login) require `Authorization: Bearer <token>` header.
 - D2: Tenant-scoped cache keys (`tenant:{id}:patients:branch:{id}:p:{page}:s:{size}`)
 - D3: Cache invalidation on patient creation (removes all cached pages for tenant)
 
+### E - Architecture & Evolution (Bonus — E1 + E2)
+
+#### E1: Domain Event — `AppointmentCreatedEvent`
+
+**Event definition** (`ClinicPOS.Domain/Events/AppointmentCreatedEvent.cs`):
+```csharp
+public record AppointmentCreatedEvent(
+    Guid EventId, string EventType, Guid TenantId,
+    Guid AppointmentId, Guid BranchId, Guid PatientId,
+    DateTime StartAt, DateTime OccurredAt);
+```
+
+**Where it's emitted**: `AppointmentService.CreateAsync()` — after `SaveChangesAsync()` persists the appointment to PostgreSQL and cache is invalidated.
+
+**Delivery**: Published to RabbitMQ with routing key `appointment.created` via `IEventPublisher.PublishAsync()`. The publisher uses a dedicated channel per call with `BasicPublishAsync()`.
+
+**Guarantees**:
+- **At-most-once delivery**: The event is published *after* the DB transaction commits but *outside* the transaction boundary. If RabbitMQ is unavailable, the appointment is still created (graceful degradation) — the publish failure is logged but does not roll back the DB write.
+- **Not outbox-based**: This is a pragmatic choice for v1. For stronger guarantees (exactly-once / at-least-once), an outbox pattern with a polling publisher or transactional outbox via PostgreSQL `LISTEN/NOTIFY` would be the next evolution.
+- **Idempotent consumers**: The event includes a unique `EventId` (GUID), allowing consumers to deduplicate if the same event were ever published twice.
+
+**Trade-off**: We chose simplicity over guaranteed delivery. For a Clinic POS v1, losing an occasional event (e.g., notification) is acceptable. Critical business state lives in PostgreSQL, not in the event stream.
+
+#### E2: Tenant Isolation Strategy
+
+**How TenantId is derived**:
+1. User logs in via `POST /api/auth/login` → JWT issued with `tenant_id` claim (from `User.TenantId` in DB)
+2. On each request, `TenantContextMiddleware` extracts `tenant_id` from the JWT claims and sets it on the scoped `TenantContext` service
+3. `TenantContext` implements `ITenantContext` interface (Domain layer), making tenant identity available to all Application/Infrastructure layers without coupling to HTTP
+
+**How it's enforced in the data access layer** (defense-in-depth):
+
+| Layer | Mechanism | Protects Against |
+|-------|-----------|-----------------|
+| **EF Core Global Query Filter** | `HasQueryFilter(e => e.TenantId == tenantId)` on Patient, Appointment, User, Branch entities | Accidental cross-tenant reads — impossible to forget WHERE clause |
+| **Service-layer validation** | `if (tenantId != _tenant.TenantId) throw ForbiddenException` | Deliberate tenant spoofing — user cannot query another tenant's data even by guessing their tenantId |
+| **DB unique constraints** | `HasIndex(p => new { p.TenantId, p.PhoneNumber }).IsUnique()` | Cross-tenant uniqueness collision — phone numbers are unique per-tenant, not globally |
+
+**How we prevent accidental missing filters**:
+- Global Query Filters are registered once in `AppDbContext.OnModelCreating()` and apply automatically to **every** LINQ query — developers cannot accidentally skip them
+- The `ITenantContext` is injected via DI into every service; there is no way to construct a service without a tenant context in the running application
+- Integration tests explicitly verify isolation: `TenantScopingEnforced` test creates data in Tenant A and asserts it's invisible from Tenant B's context
+- Write operations (`CreateAsync`) always set `TenantId = _tenant.TenantId` from the JWT — the client cannot override it via the request body
+
 ## Running Tests
 
 ```bash
 cd src/backend
-dotnet test
+dotnet test --logger "console;verbosity=detailed"
 ```
 
 ### Test Coverage (5 tests)
