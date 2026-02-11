@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ClinicPOS.API/ClinicPOS.API.csproj" />
+  <Project Path="ClinicPOS.Application/ClinicPOS.Application.csproj" />
+  <Project Path="ClinicPOS.Domain/ClinicPOS.Domain.csproj" />
+  <Project Path="ClinicPOS.Infrastructure/ClinicPOS.Infrastructure.csproj" />
+  <Project Path="ClinicPOS.Tests/ClinicPOS.Tests.csproj" />
+</Solution>
