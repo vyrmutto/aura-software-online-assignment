@@ -27,6 +27,24 @@ public class AppointmentService
         _eventPublisher = eventPublisher;
     }
 
+    public async Task<List<AppointmentDto>> ListAsync(Guid tenantId, Guid? branchId, CancellationToken ct)
+    {
+        if (tenantId != _tenant.TenantId)
+            throw new ForbiddenException("Tenant ID mismatch");
+
+        var query = _db.Appointments.AsQueryable();
+
+        if (branchId.HasValue)
+            query = query.Where(a => a.BranchId == branchId.Value);
+
+        var items = await query
+            .OrderByDescending(a => a.StartAt)
+            .Take(100)
+            .ToListAsync(ct);
+
+        return items.Select(MapToDto).ToList();
+    }
+
     public async Task<AppointmentDto> CreateAsync(CreateAppointmentRequest request, CancellationToken ct)
     {
         // Pre-check for duplicate appointment (defense in depth alongside DB constraint)

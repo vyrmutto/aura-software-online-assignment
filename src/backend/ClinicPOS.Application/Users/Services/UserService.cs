@@ -17,6 +17,16 @@ public class UserService
         _tenant = tenant;
     }
 
+    public async Task<List<UserDto>> ListAsync(CancellationToken ct)
+    {
+        var users = await _db.Users
+            .Include(u => u.UserBranches)
+            .OrderBy(u => u.Username)
+            .ToListAsync(ct);
+
+        return users.Select(MapToDto).ToList();
+    }
+
     public async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken ct)
     {
         var user = new User
@@ -63,7 +73,7 @@ public class UserService
 
     private static UserDto MapToDto(User u) =>
         new(u.Id, u.Username, u.Role, u.TenantId,
-            u.UserBranches.Select(ub => ub.BranchId).ToList());
+            u.UserBranches.Select(ub => ub.BranchId).ToList(), u.CreatedAt);
 
     private static bool IsUniqueConstraintViolation(DbUpdateException ex)
     {

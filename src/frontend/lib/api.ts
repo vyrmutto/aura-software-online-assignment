@@ -1,4 +1,4 @@
-import { LoginResponse, PatientListResponse, Patient, Branch, Appointment, CreatePatientRequest, CreateAppointmentRequest } from './types';
+import { LoginResponse, PatientListResponse, Patient, Branch, Appointment, CreatePatientRequest, CreateAppointmentRequest, UserInfo, CreateUserRequest, AssignRoleRequest } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -46,9 +46,30 @@ export const api = {
 
   getBranches: () => fetchApi<Branch[]>('/api/branches'),
 
+  getAppointments: (params: { tenantId: string; branchId?: string }) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('tenantId', params.tenantId);
+    if (params.branchId) searchParams.set('branchId', params.branchId);
+    return fetchApi<Appointment[]>(`/api/appointments?${searchParams.toString()}`);
+  },
+
   createAppointment: (data: CreateAppointmentRequest) =>
     fetchApi<Appointment>('/api/appointments', {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getUsers: () => fetchApi<UserInfo[]>('/api/users'),
+
+  createUser: (data: CreateUserRequest) =>
+    fetchApi<UserInfo>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  assignRole: (userId: string, data: AssignRoleRequest) =>
+    fetchApi<UserInfo>(`/api/users/${userId}/role`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
 };

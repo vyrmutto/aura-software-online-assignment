@@ -37,6 +37,18 @@ export default function Navbar() {
               >
                 Appointments
               </Link>
+              {user.role === 'Admin' && (
+                <Link
+                  href="/users"
+                  className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                    pathname === '/users'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Users
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-4">

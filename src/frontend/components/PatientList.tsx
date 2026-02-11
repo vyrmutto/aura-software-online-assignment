@@ -56,6 +56,9 @@ export default function PatientList() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Tenant: {user?.tenantId?.slice(0, 8)}...
+          </span>
           <BranchFilter value={branchId} onChange={handleBranchChange} />
         </div>
         {user?.role !== 'Viewer' && (
@@ -118,7 +121,8 @@ export default function PatientList() {
                     {patient.primaryBranchId || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(patient.createdAt).toLocaleDateString()}
+                    {new Date(patient.createdAt).toLocaleDateString()}{' '}
+                    {new Date(patient.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                 </tr>
               ))

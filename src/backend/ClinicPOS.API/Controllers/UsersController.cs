@@ -20,6 +20,13 @@ public class UsersController : ControllerBase
         _validator = validator;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> List(CancellationToken ct)
+    {
+        var result = await _userService.ListAsync(ct);
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request, CancellationToken ct)
     {

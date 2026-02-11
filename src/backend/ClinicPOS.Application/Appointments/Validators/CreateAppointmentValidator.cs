@@ -9,6 +9,6 @@ public class CreateAppointmentValidator : AbstractValidator<CreateAppointmentReq
     {
         RuleFor(x => x.BranchId).NotEmpty();
         RuleFor(x => x.PatientId).NotEmpty();
-        RuleFor(x => x.StartAt).NotEmpty().GreaterThan(DateTime.UtcNow);
+        RuleFor(x => x.StartAt).NotEmpty();
     }
 }

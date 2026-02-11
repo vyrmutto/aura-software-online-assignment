@@ -22,6 +22,16 @@ public class AppointmentsController : ControllerBase
         _validator = validator;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> List(
+        [FromQuery(Name = "tenantId")] Guid tenantId,
+        [FromQuery] Guid? branchId,
+        CancellationToken ct)
+    {
+        var result = await _appointmentService.ListAsync(tenantId, branchId, ct);
+        return Ok(result);
+    }
+
     [HttpPost]
     [Authorize(Policy = "CanCreateAppointment")]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken ct)

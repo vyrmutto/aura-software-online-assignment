@@ -5,5 +5,6 @@ public record UserDto(
     string Username,
     string Role,
     Guid TenantId,
-    List<Guid> BranchIds
+    List<Guid> BranchIds,
+    DateTime CreatedAt
 );

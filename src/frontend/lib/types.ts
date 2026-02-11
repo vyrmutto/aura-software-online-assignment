@@ -55,6 +55,26 @@ export interface CreateAppointmentRequest {
   startAt: string;
 }
 
+export interface UserInfo {
+  id: string;
+  username: string;
+  role: string;
+  tenantId: string;
+  branchIds: string[];
+  createdAt: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  role: string;
+  branchIds: string[];
+}
+
+export interface AssignRoleRequest {
+  role: string;
+}
+
 export interface ApiError {
   error: string;
   message: string;
